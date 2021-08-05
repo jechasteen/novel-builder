@@ -1,0 +1,61 @@
+# Build output directory name in current tree
+build: build
+tex_filename: book.tex
+
+metadata:
+  title: Example Book
+  subtitle: Not a Real Book
+  author: Jane Doe
+
+dimensions:
+  trimSize:
+    w: 5.5in
+    h: 8.5in
+  margins:
+    top: 0.5in
+    outer: 0.5in
+    bottom: 0.5in
+    inner: 0.75in
+
+fonts:
+  parentFont: "Libertinus Serif"
+  sansFont: "Libertinus Sans"
+  decoFont: "NovelDeco.otf"
+  monoFont: "Libertinus Mono"
+  mathFont: "Libertinus Math"
+
+headerFooter:
+  headFootStyle: 1
+  headJump: 1.5
+  footJump: 1.5
+  looseHead: 50
+  emblems:
+    verso: "|"
+    recto: "|"
+  pageNumberStyle:
+    pre: "-"
+    post: "-"
+  versoHeadText: "\\theAuthor"
+  rectoHeadText: "\\theTitle"
+
+chapterStyle:
+  chapterStartStyle: "footer"
+  chapterStartHeight: 10
+  # chapterFont:
+  #   options: ""
+  #   font: "\\parentfontname"
+  sceneBreakIndent: false
+  recto: true
+
+other:
+  defaultLanguage:
+    variant: "american"
+    lang: "english"
+  microtype:
+    config: novel-microtype
+    stretch: 20
+    shrink: 20
+  # microtype:
+  #   config: ""
+  #   stretch: 20
+  #   shrink: 20

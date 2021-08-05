@@ -1,0 +1,16 @@
+{
+  "name": "template",
+  "version": "0.0.1",
+  "description": "A template for building novels in markdown using pandoc and the novel documentclass",
+  "main": "build.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build.js"
+  },
+  "keywords": [],
+  "author": "Jonathan Chasteen",
+  "license": "MIT",
+  "dependencies": {
+    "yaml": "^1.10.2"
+  }
+}
