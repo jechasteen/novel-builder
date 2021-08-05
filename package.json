@@ -4,8 +4,8 @@
   "description": "A template for building novels in markdown using pandoc and the novel documentclass",
   "main": "build.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node build.js"
+    "test": "wc -w chapters/*.md",
+    "start": "node build.js"
   },
   "keywords": [],
   "author": "Jonathan Chasteen",
