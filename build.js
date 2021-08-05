@@ -27,7 +27,11 @@ const buildContent = (content) => {
 
 // Build
 ; (() => {
-    const config = y.parse(fs.readFileSync(path.join(__dirname, "defaults.yml"), { encoding: "utf-8" }))
+    if (!fs.existsSync(path.join(__dirname, "metadata.yml"))) {
+	console.log("Build Failed: Please copy defaults.yml to metatadata.yml and edit to suit your project.")
+	process.exit(1)
+    }
+    const config = y.parse(fs.readFileSync(path.join(__dirname, "metadata.yml"), { encoding: "utf-8" }))
     const chapters = fs.readdirSync(path.join(__dirname, "chapters"))
     const content = {}
     let document = ""
