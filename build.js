@@ -3,6 +3,7 @@ const path = require("path")
 const exec = require("child_process").exec
 const fields = require("./fields")
 const y = require("yaml")
+const pandoc = require("node-pandoc")
 
 const buildHeader = (config) => {
     let header = fields.documentclass
@@ -25,11 +26,21 @@ const buildContent = (content) => {
     return res
 }
 
-// Build
-; (() => {
+async function getLatexPartial(markdown) {
+    const args = "-f markdown -t latex"
+    return new Promise((resolve, reject) => {
+        pandoc(markdown, args, (err, result) => {
+            if (err) reject(err)
+            else resolve(result)
+        })
+    })
+}
+
+    // Build
+; (async function() {
     if (!fs.existsSync(path.join(__dirname, "metadata.yml"))) {
-	console.log("Build Failed: Please copy defaults.yml to metatadata.yml and edit to suit your project.")
-	process.exit(1)
+        console.log("Build Failed: Please copy defaults.yml to metatadata.yml and edit to suit your project.")
+        process.exit(1)
     }
     const config = y.parse(fs.readFileSync(path.join(__dirname, "metadata.yml"), { encoding: "utf-8" }))
     const chapters = fs.readdirSync(path.join(__dirname, "chapters"))
@@ -47,11 +58,13 @@ const buildContent = (content) => {
             if (currentChapter[line].match(/^# .+/g)) {
                 title = currentChapter[line].replace("# ", "")
                 currentChapter.splice(line, line + 1)
-                content[chapters[i]] = fields.chapter(title, config.chapterStyle.recto, currentChapter.join("\n"))
+                const latex = await getLatexPartial(currentChapter.join("\n"))
+                content[chapters[i]] = fields.chapter(title, config.chapterStyle.recto, latex)
+                break
             }
         }
     }
-
+    
     document += buildHeader(config) + "\n"
     document += fields.document.wrapper(buildContent(content))
     if (!fs.existsSync(path.join(__dirname, config.build))) {
