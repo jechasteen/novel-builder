@@ -5,7 +5,8 @@
   "main": "build.js",
   "scripts": {
     "test": "wc -w chapters/*.md",
-    "start": "node build.js"
+    "novel": "node novel.js",
+    "manuscript": "bash manuscript.sh"
   },
   "keywords": [],
   "author": "Jonathan Chasteen",

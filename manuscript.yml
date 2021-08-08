@@ -1,0 +1,46 @@
+---
+documentclass: report
+fontfamily: courier
+fontsize: 12pt
+
+header-includes:
+- |
+  ```{=latex}
+  \usepackage{titling}
+
+  % CHANGE ME
+  \title{Example Book}
+  \author{Jane Doe}
+  %
+
+  \usepackage[margin=1in]{geometry}
+
+  \usepackage{fancyhdr}
+  \pagestyle{fancy}
+  \fancypagestyle{plain} {
+    \fancyhf{}
+    \fancyhead[R]{\theauthor / \thetitle / \thepage}
+    \renewcommand{\headrulewidth}{0pt}
+  }
+  \fancyhf{}
+  \fancyhead[R]{\theauthor / \thetitle / \thepage}
+  \renewcommand{\headrulewidth}{0pt}
+
+  \usepackage{setspace}
+  \doublespace
+
+  \raggedright
+
+  \setlength{\parskip}{0pt}
+  \setlength{\parindent}{0.5in}
+
+  \usepackage{indentfirst}
+
+  \usepackage{titlesec}
+  \titleformat{\chapter}[display]
+    {\normalfont\huge\centering}{\centering\chaptertitlename\ \thechapter}{20pt}{\normalsize}
+  \titlespacing*{\chapter} 
+    {0pt}{100pt}{20pt}
+
+  ```
+---

@@ -1,6 +1,6 @@
 # Build output directory name in current tree
 build: build
-tex_filename: book.tex
+filename: book
 
 metadata:
   title: Example Book

@@ -1,7 +1,7 @@
 const fs = require("fs")
 const path = require("path")
 const exec = require("child_process").exec
-const fields = require("./fields")
+const fields = require("./novel_latex_templates")
 const y = require("yaml")
 const pandoc = require("node-pandoc")
 
@@ -38,11 +38,8 @@ async function getLatexPartial(markdown) {
 
     // Build
 ; (async function() {
-    if (!fs.existsSync(path.join(__dirname, "metadata.yml"))) {
-        console.log("Build Failed: Please copy defaults.yml to metatadata.yml and edit to suit your project.")
-        process.exit(1)
-    }
-    const config = y.parse(fs.readFileSync(path.join(__dirname, "metadata.yml"), { encoding: "utf-8" }))
+    let metadata_path = path.join(__dirname, "metadata.yml")
+    const config = y.parse(fs.readFileSync(metadata_path, { encoding: "utf-8" }))
     const chapters = fs.readdirSync(path.join(__dirname, "chapters"))
     const content = {}
     let document = ""
@@ -70,9 +67,11 @@ async function getLatexPartial(markdown) {
     if (!fs.existsSync(path.join(__dirname, config.build))) {
         fs.mkdirSync(path.join(__dirname, config.build), { recursive: true })
     }
-    fs.writeFileSync(path.join(__dirname, config.build, config.tex_filename), document)
 
-    exec(`lualatex --output-directory=${path.join(__dirname, config.build)} ${path.join(__dirname, config.build, config.tex_filename)}`, (err, stdout, stderr) => {
+    const tex_filename = config.filename + ".tex"
+    fs.writeFileSync(path.join(__dirname, config.build, tex_filename), document)
+
+    exec(`lualatex --output-directory=${path.join(__dirname, config.build)} ${path.join(__dirname, config.build, tex_filename)}`, (err, stdout, stderr) => {
         if (err) throw err
         if (stdout) console.log(stdout)
         if (stderr) console.log(stderr)
