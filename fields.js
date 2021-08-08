@@ -33,6 +33,7 @@ Kerning=On,
 Ligatures=TeX,
 ]{${s}}`
     },
+    fontSize: s => `\\SetFontSize{${s}}`,
     decoFont: s => `\\SetDecoFont{${s}}`,
     sansFont: s => `\\setsansfont{${s}}`,
     monoFont: s => `\\setmonofont{${s}}`,

@@ -19,6 +19,7 @@ dimensions:
 
 fonts:
   parentFont: "Libertinus Serif"
+  fontSize: "10pt"
   sansFont: "Libertinus Sans"
   decoFont: "NovelDeco.otf"
   monoFont: "Libertinus Mono"
