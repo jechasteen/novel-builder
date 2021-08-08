@@ -80,9 +80,15 @@ create_variables() {
 
 create_variables metadata.yml
 
+if [[ ! -d $BUILD ]]; then
+    mkdir $BUILD
+fi
+
+CONTENT=
+
 awk 'FNR==1 && NR!=1 {print "\n\n"}{print}' $CHAPTERS | \
     awk '{ gsub(/^---/, "\\begin{center}\n* * *\\end{center}"); print }' | \
         pandoc -o $BUILD/$filename-manuscript.pdf \
-        -f markdown+raw_tex \
-        --metadata-file=manuscript.yml \
-        && echo "Manuscript completed: $BUILD/$filename-manuscript.pdf"
+            -f markdown+raw_tex \
+            --metadata-file=manuscript.yml \
+            && echo "Manuscript completed: $BUILD/$filename-manuscript.pdf"
