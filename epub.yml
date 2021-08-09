@@ -1,0 +1,13 @@
+---
+# see https://pandoc.org/MANUAL.html#epub-metadata
+title: Example Book
+creator:
+  - role: author
+    text: Jane Doe
+identifier:
+  - scheme: ISBN-13
+    text: ISBN-13:978-1-56619-909-4
+publisher: Example Press
+rights: Copyright © 2021 Example Press, All Rights Reserved
+lang: en-US
+---

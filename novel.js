@@ -36,9 +36,9 @@ async function getLatexPartial(markdown) {
     })
 }
 
-    // Build
-; (async function() {
-    let metadata_path = path.join(__dirname, "metadata.yml")
+// Build
+; (async function () {
+    let metadata_path = path.join(__dirname, "novel.yml")
     const config = y.parse(fs.readFileSync(metadata_path, { encoding: "utf-8" }))
     const chapters = fs.readdirSync(path.join(__dirname, "chapters"))
     const content = {}
@@ -61,7 +61,7 @@ async function getLatexPartial(markdown) {
             }
         }
     }
-    
+
     document += buildHeader(config) + "\n"
     document += fields.document.wrapper(buildContent(content))
     if (!fs.existsSync(path.join(__dirname, config.build))) {

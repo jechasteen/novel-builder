@@ -1,16 +1,17 @@
 {
-  "name": "template",
+  "name": "novel-builder",
   "version": "0.0.1",
-  "description": "A template for building novels in markdown using pandoc and the novel documentclass",
-  "main": "build.js",
+  "description": "A template for building novels in markdown",
+  "main": "novel.js",
   "scripts": {
     "test": "wc -w chapters/*.md",
     "novel": "node novel.js",
-    "manuscript": "bash manuscript.sh"
+    "manuscript": "bash build.sh manuscript",
+    "epub": "bash build.sh epub"
   },
   "keywords": [],
   "author": "Jonathan Chasteen",
-  "license": "MIT",
+  "license": "unlicense",
   "dependencies": {
     "node-pandoc": "^0.3.0",
     "yaml": "^1.10.2"

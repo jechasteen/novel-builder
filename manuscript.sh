@@ -84,8 +84,6 @@ if [[ ! -d $BUILD ]]; then
     mkdir $BUILD
 fi
 
-CONTENT=
-
 awk 'FNR==1 && NR!=1 {print "\n\n"}{print}' $CHAPTERS | \
     awk '{ gsub(/^---/, "\\begin{center}\n* * *\\end{center}"); print }' | \
         pandoc -o $BUILD/$filename-manuscript.pdf \
