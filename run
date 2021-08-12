@@ -1,0 +1,142 @@
+#!/bin/env bash
+set -e
+
+usage () {
+    echo "usage: $0 SOURCE TYPE"
+    echo -e "\tSOURCE\t\t\tMarkdown Sources"
+    echo -e "\tTYPE must be one of:"
+    echo -e "\t\tnew\t\tCreate a new project at SOURCE/"
+    echo -e "\t\tnovel\t\tPublish-ready PDF"
+    echo -e "\t\tepub"
+    echo -e "\t\tmanuscript\tDouble-spaced, 8.5x11\" PDF"
+    exit 1
+}
+
+SOURCE_DIR=$1
+BUILD_TYPE=$2
+
+if [[ -d $SOURCE_DIR ]]; then
+    SOURCES=$SOURCE_DIR/*.md
+    source $SOURCE_DIR/novel.sh
+elif [[ ! -d $SOURCE_DIR && $BUILD_TYPE -ne "new" ]]; then
+    usage
+fi
+
+create_dir_if_not_exist () {
+    if [[ ! -d $1 ]]; then
+        mkdir -p $1
+    fi
+}
+
+novel () {
+    if [[ $recto == "true" ]]; then
+        NEWPAGE="\cleartorecto
+        "
+    else
+        NEWPAGE="\clearpage
+        "
+    fi
+    BODY=""
+    for file in $SOURCES; do
+        TITLE=`cat $file | grep '#' | sed 's/# //'`
+        TEXT=`cat $file | sed '1,2d' | pandoc -t latex`
+        BODY="$BODY
+            \begin{ChapterStart}
+            \vspace*{2\nbs}
+            \ChapterTitle{$TITLE}
+            \end{ChapterStart}
+            $TEXT
+            $NEWPAGE"
+    done
+
+    echo "\documentclass{novel}
+        \SetTitle{$title}
+        \SetSubtitle{$subtitle}
+        \SetAuthor{$author}
+        \SetApplication{LuaLaTeX with novel and microtype}
+        \SetProducer{LuaLaTeX with novel-pdfx and hyperref}
+        \SetPDFX[CGATSTR001]{X-1a:2001}
+        \SetTrimSize{${trim_size[0]}}{${trim_size[1]}}
+        \SetMargins{${margins[0]}}{${margins[1]}}{${margins[2]}}{${margins[3]}}
+        \SetParentFont[ % 
+        SmallCapsFeatures={Renderer=Basic},% 
+        Kerning=On, % 
+        Ligatures=TeX, % 
+        ]{$parent_font}
+        \SetFontSize{$font_size}
+        \SetDecoFont{$deco_font}
+        \setsansfont{$sans_font}
+        \setmonofont{$mono_font}
+        \setmathfont{$math_font}
+        \SetHeadFootStyle{$header_footer_style}
+        \SetHeadJump{$head_jump}
+        \SetFootJump{$foot_jump}
+        \SetLooseHead{$loose_head}
+        \SetEmblems{${emblems[0]}}{${emblems[1]}}
+        \SetHeadFont[\parentfontfeatures,Letters=SmallCaps,Scale=0.92]{\parentfontname}
+        \SetPageNumberStyle{${page_number_deco[1]}\thepage${page_number_deco[1]}}
+        \SetVersoHeadText{$verso_head_text}
+        \SetRectoHeadText{$recto_head_text}
+        \SetChapterStartStyle{$chapter_start_style}
+        \SetChapterStartHeight{$chapter_start_height}
+        \SetChapterFont[Numbers=Lining,Scale=1.6]{\parentfontname}
+        \SetSubchFont[Numbers=Lining,Scale=1.2]{\parentfontname}
+        \SetScenebreakIndent{$scene_break_indent}
+        \setdefaultlanguage[variant=${language[1]}]{${language[0]}}
+        \microtypesetup{config=novel-microtype,stretch=20,shrink=20,final}
+        \begin{document}
+        \frontmatter
+        \mainmatter
+        \cleartorecto
+        $BODY
+        \end{document}" | sed "s/^[ \t]*//g" > $build/$filename-novel.tex
+    lualatex --output-directory=$build $build/$filename-novel.tex &> $build/lualatex-$filename-novel.log && \
+        echo -e "Novel completed:\t$build/$filename-novel.pdf"
+}
+
+epub () {
+    create_dir_if_not_exist $build
+
+    OUTFILE=$build/$filename.epub
+    LOGFILE=$build/pandoc-$filename-epub.log
+
+    awk 'FNR==1 && NR!=1 {print "\n\n"}{print}' $SOURCES |
+        pandoc -o $OUTFILE --verbose \
+            --metadata-file=$SOURCE_DIR/epub.yml &> $LOGFILE &&
+        echo -e "EPUB completed:\t\t$build/$filename.epub" ||
+        echo -e "EPUB failed.\t\tSee $LOGFILE for more info"
+}
+
+manuscript () {
+    create_dir_if_not_exist $build
+
+    OUTFILE=$build/$filename-manuscript.pdf
+    LOGFILE=$build/pandoc-$filename-manuscript.log
+
+    awk 'FNR==1 && NR!=1 {print "\n\n"}{print}' $SOURCES |
+        awk '{ gsub(/^---/, "\\begin{center}\n* * *\\end{center}"); print }' |
+        pandoc -o $OUTFILE --verbose\
+            -f markdown+raw_tex \
+            --metadata-file=$SOURCE_DIR/manuscript.yml &> $LOGFILE &&
+        echo -e "Manuscript completed:\t$OUTFILE" ||
+        echo -e "Manuscript failed.\tSee $LOGFILE for more info."
+}
+
+new () {
+    if [[ -d $SOURCE_DIR ]]; then
+        echo "Error: $SOURCE_DIR already exists"
+    else
+        cp -R example $SOURCE_DIR
+    fi
+}
+
+case "${BUILD_TYPE}" in
+    "")         usage ;;
+    new)        new ;;
+    novel)      novel ;;
+    epub)       epub ;; 
+    manuscript) manuscript ;;
+    all)        novel & epub & manuscript; wait; echo "Finished." ;;
+    wc)         wc -w $SOURCE_DIR/*.md ;;
+    *)          usage ;;
+esac
