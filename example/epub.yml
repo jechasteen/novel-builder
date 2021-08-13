@@ -1,6 +1,10 @@
 ---
 # see https://pandoc.org/MANUAL.html#epub-metadata
-title: Example Book
+title:
+- type: main
+  text: Example Book
+- type: subtitle
+  text: Not a Real Book
 creator:
   - role: author
     text: Jane Doe
