@@ -12,22 +12,22 @@ Output to PDF/X, EPUB, or double-spaced manuscript PDF.
 ## Usage
 
 1. Start a new repo using this template.
-2. Create a new project with `./run book_directory new`
+2. Create a new project with `./nb book_directory new`
 3. Edit `novel.sh`, `manuscript.yml`, and `epub.yml` to suit your project
 4. Start writing your book inside of the new directory with the following rules:
    * Order the files by prefixing a number, eg. `0_Introduction.md` goes before `1_Chapter_One.md`
    * Start each file with level one title, e.g. `# Chapter One`
-5. Use the `run` script:
+5. Use the `nb` script:
    * Parameter 1: directory containing project files (see `./example`)
    * Parameter 2: command to run
-     * `new` - copies the example directory to the directory given in parameter 1
      * `novel` - a TEX and PDF ready to send to POD service.
      * `epub` - an EPUB formatted file.
      * `manuscript` - a double-spaced draft for revision
      * `all` - run all of the above commands concurrently
+     * `new` - copies the example directory to the directory given in parameter 1
      * `wc` - count words per file and total wordcount for selected directory
 
-> For example, `./run example/ all`
+> For example, `./nb example/ all`
 
 ## Limitations
 
