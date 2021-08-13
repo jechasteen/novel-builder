@@ -12,7 +12,7 @@ usage () {
     exit 1
 }
 
-SOURCE_DIR=$1
+SOURCE_DIR=$(echo "$1" | sed "s/\///")
 BUILD_TYPE=$2
 
 if [[ -d $SOURCE_DIR ]]; then
@@ -122,11 +122,45 @@ manuscript () {
         echo -e "Manuscript failed.\tSee $LOGFILE for more info."
 }
 
+prepare_metadata_files () {
+    echo "Title (required): "
+    read TITLE
+    echo "Subtitle (blank for none): "
+    read SUBTITLE
+    echo "Author (required): "
+    read AUTHOR
+    FILENAME=$(echo "$TITLE" | sed "s/ //g")
+
+    echo "Creating novel.sh"
+    sed -e "s/example\/build/$SOURCE_DIR\/build/" \
+        -e "s/book/$FILENAME/" \
+        -e "s/Example Book/$TITLE/" \
+        -e "s/Not a Real Book/$SUBTITLE/" \
+        -e "s/Jane Doe/$AUTHOR/" example/novel.sh > $SOURCE_DIR/novel.sh
+
+    echo "Creating manuscript.yml"
+    cat example/manuscript.yml |
+        sed "s/Example Book/$TITLE/" |
+        sed "s/Jane Doe/$AUTHOR/" > $SOURCE_DIR/manuscript.yml
+
+    echo "Creating epub.yml"
+    cat example/epub.yml |
+        sed "s/Example Book/$TITLE/" |
+        sed "s/Not a Real Book/$SUBTITLE/" |
+        sed "s/Jane Does/$AUTHOR/" > $SOURCE_DIR/epub.yml
+}
+
+
 new () {
     if [[ -d $SOURCE_DIR ]]; then
         echo "Error: $SOURCE_DIR already exists"
+        exit 1
+    elif [[ ! -d example ]]; then
+        echo "Error: example directory is missing."
+        exit 1
     else
-        cp -R example $SOURCE_DIR
+        create_dir_if_not_exist $SOURCE_DIR
+        prepare_metadata_files
     fi
 }
 
