@@ -9,6 +9,8 @@ Output to PDF/X, EPUB, or double-spaced manuscript PDF.
 * LuaLaTeX
 * Pandoc
 
+**Ubuntu:** `sudo apt install pandoc texlive-latex-base`
+
 ## Usage
 
 1. Start a new repo using this template.
