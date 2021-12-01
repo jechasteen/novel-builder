@@ -2,13 +2,16 @@
 set -e
 
 usage () {
-    echo "usage: $0 SOURCE TYPE"
-    echo -e "\tSOURCE\t\t\tMarkdown Sources"
-    echo -e "\tTYPE must be one of:"
-    echo -e "\t\tnew\t\tCreate a new project at SOURCE/"
-    echo -e "\t\tnovel\t\tPublish-ready PDF"
-    echo -e "\t\tepub"
-    echo -e "\t\tmanuscript\tDouble-spaced, 8.5x11\" PDF"
+    echo "novel-builder: failed to parse command"
+    echo -e "usage: $0 SOURCE TYPE\n\n" \
+            "SOURCE\t\t\tMarkdown Sources\n\n" \
+            "TYPE must be one of:\n" \
+            "\tnew\t\tCreate a new project at SOURCE/\n" \
+            "\tnovel\t\tPublish-ready PDF\n" \
+            "\tepub\t\tEPUB eBook\n" \
+            "\tmanuscript\tDouble-spaced, 8.5x11\" PDF\n" \
+            "\tall\t\tRun all output types\n" \
+            "\twc\t\tGet word count\n"
     exit 1
 }
 
