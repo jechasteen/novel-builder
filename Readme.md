@@ -6,10 +6,15 @@ Output to PDF/X, EPUB, or double-spaced manuscript PDF.
 
 ## Dependencies
 
-* LuaLaTeX
+* LuaLaTeX (texlive-luatex)
+* texlive-latex-recommended
+* texlive-latex-extra
+* texlive-fonts-extra
+* texlive-publishers
 * Pandoc
 
-**Ubuntu:** `sudo apt install pandoc texlive-latex-base`
+**Ubuntu:** `sudo apt install pandoc texlive-latex-base texlive-luatex texlive-latex-recommended
+texlive-latex-extra texlive-fonts-extra texlive-publishers`
 
 ## Usage
 
