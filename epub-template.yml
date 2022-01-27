@@ -10,7 +10,7 @@ creator:
     text: AUTHOR
 identifier:
   - scheme: ISBN-13
-    text: ISBN-13:
+    text: # ISBN-13:
 publisher: PUBLISHER
 rights: Copyright © YEAR COPYRIGHT, All Rights Reserved
 lang: en-US
