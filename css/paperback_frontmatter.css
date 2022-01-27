@@ -1,0 +1,86 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+@page {
+    size: 6in 9in;
+}
+
+@page:right {
+    margin: 1in 0.5in 0.5in 1in;
+}
+
+@page:left {
+    margin: 1in 1in 0.5in 0.5in
+}
+
+html, body {
+    height: 100%;
+}
+
+#blank {
+    page-break-before: always;
+    min-height: 100%;
+}
+
+#half-title-page {
+    page-break-before: right;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 24pt;
+    text-align: center;
+    margin-top: 33%
+}
+
+#full-title-page {
+    padding-top: 33%;
+    text-align: center;
+    page-break-before: right;
+    page-break-after: left;
+}
+
+#title {
+    font-size: 32pt;
+    padding-bottom: 0.5em;
+}
+
+#subtitle {
+    font-size: 16pt;
+    padding-bottom: 2em;
+}
+
+.rule {
+    min-width: 67%;
+    margin: auto;
+}
+
+#author {
+    font-size: 24pt;
+    padding: 2em 0;
+}
+
+#publisher {
+    position: absolute;
+    min-width: 100%;
+    bottom: 0;
+}
+
+#copyright-page {
+    page-break-before: always;
+    height: 100%;
+}
+
+#copyright-text {
+    min-width: 100%;
+    position: absolute;
+    bottom: 0;
+    text-align: center;
+}
+
+#variable-page {
+    page-break-before: right;
+    page-break-after: always;
+    margin-top: 33%;
+    min-width: 100%;
+    text-align: center;
+}

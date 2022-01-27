@@ -1,0 +1,40 @@
+@page {
+    size: Letter;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    font-weight: normal;
+    margin: 1in;
+    margin-top: 1.5in;
+    @top-right {
+        margin-top: 1in;
+        content: "LASTNAME / TITLE / " counter(page);
+    }
+}
+
+* {
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    font-size: 12pt;
+    font-family: 'Times New Roman', Times, serif;
+}
+
+h1, h2 {
+    font-size: 12pt;
+    font-weight: normal;
+    text-align: center;
+    padding-top: 2.67in;
+    line-height: 8;
+    page-break-before: always;
+    text-transform: capitalize;
+}
+
+body {
+    line-height: 2;
+}
+
+p {
+    text-indent: 0.5in;
+}

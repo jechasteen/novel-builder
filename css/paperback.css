@@ -1,0 +1,61 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+@page {
+    size: 6in 9in;
+    counter-increment: page 1;
+}
+
+@page:first {
+    /* Edit this number to account for # of front matter pages */
+    counter-reset: page 6;
+}
+
+@page:left {
+    margin: 1in 1in 0.5in 0.5in;
+    @top-left {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin-top: 0.5in;
+        content: "AUTHOR"
+    }
+    @bottom-center {
+        font-family:'Times New Roman', Times, serif;
+        content: counter(page)
+    }
+}
+
+@page:right {
+    margin: 1in 0.5in 0.5in 1in;
+    @top-right {
+        margin-top: 0.5in;
+        content: "TITLE"
+    }
+    @bottom-center {
+        font-family: 'Times New Roman', Times, serif;
+        content: counter(page)
+    }
+}
+
+body {
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    font-weight: normal;
+}
+
+h1 {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 20pt;
+    page-break-before: always;
+    padding: 33% 0 2em 0;
+}
+
+p {
+    text-indent: 0.25in;
+    line-height: 1.25;
+}
+
+h1 + p {
+    text-indent: 0;
+}

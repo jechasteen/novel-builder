@@ -1,0 +1,47 @@
+@page {
+    size: Letter;
+    margin: 1in;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    font-weight: normal;
+    min-width: 100%;
+}
+
+h1, h2 {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 12pt;
+    font-weight: normal;
+}
+
+#contact {
+    line-height: 1.5;
+}
+
+#title {
+    text-align: center;
+    min-width: 100%;
+    position: absolute;
+    top: 33%;
+}
+
+#copyright {
+    text-align: center;
+    min-width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+
+#wordcount {
+    text-align: right;
+    min-width: 100%;
+    position: absolute;
+    top: 0;
+}

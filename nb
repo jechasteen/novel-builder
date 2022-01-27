@@ -1,29 +1,40 @@
-#!/bin/env bash
+#!/usr/bin/env bash
 set -e
 
-usage () {
-    echo "novel-builder: failed to parse command"
-    echo -e "usage: $0 SOURCE TYPE\n\n" \
-            "SOURCE\t\t\tMarkdown Sources\n\n" \
-            "TYPE must be one of:\n" \
-            "\tnew\t\tCreate a new project at SOURCE/\n" \
-            "\tnovel\t\tPublish-ready PDF\n" \
-            "\tepub\t\tEPUB eBook\n" \
-            "\tmanuscript\tDouble-spaced, 8.5x11\" PDF\n" \
-            "\tall\t\tRun all output types\n" \
-            "\twc\t\tGet word count\n"
+if [ ! `basename $PWD` = "novel-builder" ]; then
+    echo "Please run the script from inside the novel-builder directory."
     exit 1
-}
+fi
 
-SOURCE_DIR=$(echo "$1" | sed "s/\///")
-BUILD_TYPE=$2
+SOURCE_DIR=../src
+SOURCES=../src/*.md
+BUILD_DIR=../build
+OUTPUT_DIR=../bin
+LOGFILE=$BUILD_DIR/build.log
 
 if [[ -d $SOURCE_DIR ]]; then
     SOURCES=$SOURCE_DIR/*.md
-    source $SOURCE_DIR/novel.sh
-elif [[ ! -d $SOURCE_DIR && $BUILD_TYPE -ne "new" ]]; then
-    usage
+else
+    echo "Source directory '$SOURCE_DIR' does not exist!"
+    exit 1
 fi
+
+version () {
+    echo "Novel Builder v2.0.0"
+}
+
+usage () {
+    echo "Usage: $0 [OPTION || COMMAND]"
+    echo -e "\nOptions:"
+    echo -e "\t-h, --help\tPrint this help message"
+    echo -e "\t-v. --version\tPrint version and exit"
+    echo -e "\nCOMMAND must be one of:"
+    echo -e "\tclean\t\tRemove build directory."
+    echo -e "\twc\t\tPrint word count for each chapter and a grand total."
+    echo -e "\tmanuscript"
+    echo -e "\tpaperback"
+    exit 1
+}
 
 create_dir_if_not_exist () {
     if [[ ! -d $1 ]]; then
@@ -31,147 +42,189 @@ create_dir_if_not_exist () {
     fi
 }
 
-novel () {
-    if [[ $recto == "true" ]]; then
-        NEWPAGE="\cleartorecto
-        "
-    else
-        NEWPAGE="\clearpage
-        "
-    fi
-    BODY=""
-    for file in $SOURCES; do
-        TITLE=`cat $file | grep '#' | sed 's/# //'`
-        TEXT=`cat $file | sed '1,2d' | pandoc -t latex`
-        BODY="$BODY
-            \begin{ChapterStart}
-            \vspace*{2\nbs}
-            \ChapterTitle{$TITLE}
-            \end{ChapterStart}
-            $TEXT
-            $NEWPAGE"
+# https://stackoverflow.com/questions/29436275/how-to-prompt-for-yes-or-no-in-bash
+function yes_or_no {
+    while true; do
+        read -p "$* [y/n]: " yn
+        case $yn in
+            [Yy]*) return 0  ;;  
+            [Nn]*) echo "Aborted" ; return  1 ;;
+        esac
     done
-
-    echo "\documentclass{novel}
-        \SetTitle{$title}
-        \SetSubtitle{$subtitle}
-        \SetAuthor{$author}
-        \SetApplication{LuaLaTeX with novel and microtype}
-        \SetProducer{LuaLaTeX with novel-pdfx and hyperref}
-        \SetPDFX[CGATSTR001]{X-1a:2001}
-        \SetTrimSize{${trim_size[0]}}{${trim_size[1]}}
-        \SetMargins{${margins[0]}}{${margins[1]}}{${margins[2]}}{${margins[3]}}
-        \SetParentFont[ % 
-        SmallCapsFeatures={Renderer=Basic},% 
-        Kerning=On, % 
-        Ligatures=TeX, % 
-        ]{$parent_font}
-        \SetFontSize{$font_size}
-        \SetDecoFont{$deco_font}
-        \setsansfont{$sans_font}
-        \setmonofont{$mono_font}
-        \setmathfont{$math_font}
-        \SetHeadFootStyle{$header_footer_style}
-        \SetHeadJump{$head_jump}
-        \SetFootJump{$foot_jump}
-        \SetLooseHead{$loose_head}
-        \SetEmblems{${emblems[0]}}{${emblems[1]}}
-        \SetHeadFont[\parentfontfeatures,Letters=SmallCaps,Scale=0.92]{\parentfontname}
-        \SetPageNumberStyle{${page_number_deco[1]}\thepage${page_number_deco[1]}}
-        \SetVersoHeadText{$verso_head_text}
-        \SetRectoHeadText{$recto_head_text}
-        \SetChapterStartStyle{$chapter_start_style}
-        \SetChapterStartHeight{$chapter_start_height}
-        \SetChapterFont[Numbers=Lining,Scale=1.6]{\parentfontname}
-        \SetSubchFont[Numbers=Lining,Scale=1.2]{\parentfontname}
-        \SetScenebreakIndent{$scene_break_indent}
-        \setdefaultlanguage[variant=${language[1]}]{${language[0]}}
-        \microtypesetup{config=novel-microtype,stretch=20,shrink=20,final}
-        \begin{document}
-        \frontmatter
-        \mainmatter
-        \cleartorecto
-        $BODY
-        \end{document}" | sed "s/^[ \t]*//g" > $build/$filename-novel.tex
-    lualatex --output-directory=$build $build/$filename-novel.tex &> $build/lualatex-$filename-novel.log && \
-        echo -e "Novel completed:\t$build/$filename-novel.pdf"
 }
 
-epub () {
-    create_dir_if_not_exist $build
-
-    OUTFILE=$build/$filename.epub
-    LOGFILE=$build/pandoc-$filename-epub.log
-
-    awk 'FNR==1 && NR!=1 {print "\n\n"}{print}' $SOURCES |
-        pandoc -o $OUTFILE --verbose \
-            --metadata-file=$SOURCE_DIR/epub.yml &> $LOGFILE &&
-        echo -e "EPUB completed:\t\t$build/$filename.epub" ||
-        echo -e "EPUB failed.\t\tSee $LOGFILE for more info"
+error_msg () {
+    echo "[Error] Check $BUILD_DIR/build.log"
 }
 
 manuscript () {
-    create_dir_if_not_exist $build
+    source ../meta.sh
+    echo -n "Preparing manuscript PDF... "
+    create_dir_if_not_exist $BUILD_DIR
+    create_dir_if_not_exist $OUTPUT_DIR
 
-    OUTFILE=$build/$filename-manuscript.pdf
-    LOGFILE=$build/pandoc-$filename-manuscript.log
+    cp $SOURCE_DIR/css/manuscript.css $BUILD_DIR
 
-    awk 'FNR==1 && NR!=1 {print "\n\n"}{print}' $SOURCES |
-        awk '{ gsub(/^---/, "\\begin{center}\n* * *\\end{center}"); print }' |
-        pandoc -o $OUTFILE --verbose\
-            -f markdown+raw_tex \
-            --metadata-file=$SOURCE_DIR/manuscript.yml &> $LOGFILE &&
-        echo -e "Manuscript completed:\t$OUTFILE" ||
-        echo -e "Manuscript failed.\tSee $LOGFILE for more info."
+    filename="$abbr_title"
+    text_style=$SOURCE_DIR/css/manuscript.css
+    html_title=$SOURCE_DIR/html/manuscript_title.html
+    html_text=$BUILD_DIR/$filename-html-text.html
+    pdf_title=$BUILD_DIR/$filename-pdf-title.pdf
+    pdf_text=$BUILD_DIR/$filename-pdf-text.pdf
+    output=$OUTPUT_DIR/$filename-manuscript.pdf
+
+    echo -e "\n\n[MANUSCRIPT]" >> $LOGFILE
+
+    pandoc --standalone \
+        --verbose \
+        -f markdown \
+        -t html \
+        -c $text_style \
+        --metadata title="$title" \
+        -o $html_text $SOURCES >> $LOGFILE 2>&1\
+        && \
+        weasyprint $html_text $pdf_text \
+        || \
+        error_msg
+
+    # Apply wordcount to title page
+    intermediate=`cat $SOURCES | wc -w | awk '{print $1" / 1000"}' | bc -l`
+    wordcount=`printf "%.0f" "$intermediate" | awk '{print $1" * 1000"}' | bc -l`
+    wordcount_comma=`printf "%'d" $wordcount`
+    sed -e "s/WORDCOUNT/$wordcount_comma Words/" $html_title > $BUILD_DIR/manuscript_title.html
+    weasyprint $BUILD_DIR/manuscript_title.html $pdf_title
+
+    pdfunite $pdf_title $pdf_text $output >> $LOGFILE 2>&1 && echo "Done!"
 }
 
-prepare_metadata_files () {
-    echo "Title (required): "
-    read TITLE
-    echo "Subtitle (blank for none): "
-    read SUBTITLE
-    echo "Author (required): "
-    read AUTHOR
-    FILENAME=$(echo "$TITLE" | sed "s/ //g")
+paperback () {
+    source ../meta.sh
+    echo -n "Preparing paperback PDF... "
+    create_dir_if_not_exist $BUILD_DIR
 
-    echo "Creating novel.sh"
-    sed -e "s/example\/build/$SOURCE_DIR\/build/" \
-        -e "s/book/$FILENAME/" \
-        -e "s/Example Book/$TITLE/" \
-        -e "s/Not a Real Book/$SUBTITLE/" \
-        -e "s/Jane Doe/$AUTHOR/" example/novel.sh > $SOURCE_DIR/novel.sh
+    html_frontmatter=../src/html/paperback_frontmatter.html
+    html_text=$BUILD_DIR/paperback.html
+    pdf_frontmatter=$BUILD_DIR/paperback_frontmatter.pdf
+    pdf_text=$BUILD_DIR/paperback_text.pdf
 
-    echo "Creating manuscript.yml"
-    sed -e "s/Example Book/$TITLE/" \
-        -e "s/Jane Doe/$AUTHOR/" example/manuscript.yml > $SOURCE_DIR/manuscript.yml
+    output=$OUTPUT_DIR/$abbr_title-paperback.pdf
 
-    echo "Creating epub.yml"
-    sed -e "s/Example Book/$TITLE/" \
-        -e "s/Not a Real Book/$SUBTITLE/" \
-        -e "s/Jane Doe/$AUTHOR/" example/epub.yml > $SOURCE_DIR/epub.yml
+    echo -e "\n\n[PAPERBACK]" >> $LOGFILE
+    # Paperback body
+    pandoc --standalone \
+        --verbose \
+        -f markdown \
+        -t html \
+        -c ../src/css/paperback.css \
+        --metadata title="$title" \
+        $SOURCES -o $html_text >> $LOGFILE 2>&1 \
+        && \
+        weasyprint $html_text $pdf_text \
+        || \
+        error_msg
+    
+    # Paperback front matter
+    weasyprint $html_frontmatter $pdf_frontmatter
+    
+    pdfunite $pdf_frontmatter $pdf_text $output
+    
+    echo "Done!"
 }
 
+epub () {
+    source ../meta.sh
+    echo -n "Preparing EPUB... "
+    create_dir_if_not_exist $BUILD_DIR
+    create_dir_if_not_exist $OUTPUT_DIR
 
-new () {
-    if [[ -d $SOURCE_DIR ]]; then
-        echo "Error: $SOURCE_DIR already exists"
-        exit 1
-    elif [[ ! -d example ]]; then
-        echo "Error: example directory is missing."
-        exit 1
-    else
-        create_dir_if_not_exist $SOURCE_DIR
-        prepare_metadata_files
+    output=$OUTPUT_DIR/$abbr_title.epub
+
+    echo -e "\n\n[EPUB]" >> $LOGFILE
+    pandoc --verbose \
+        --metadata-file=../epub.yml \
+        -o $output $SOURCES >> $LOGFILE 2>&1 \
+        && echo "Done!" \
+        || error_msg
+}
+
+init () {
+    create_dir_if_not_exist ../src/html
+    create_dir_if_not_exist ../src/css
+
+    echo -e "\nNovel Builder\nInitializing new project."
+    echo -en "\nTitle: " && read title
+    echo -en "Abbreviated Title (For manuscript page headers and file names): " && read abbr_title
+    echo -en "Subtitle (leave blank for none): " && read subtitle
+    echo -en "Author's Name: " && read author
+    lastname=`echo $author | awk -F " " '{print $NF}'`
+    echo -n "Address (Line 1): " && read addr_1
+    echo -n "Address (Line 2): " && read addr_2
+    echo -n "Phone: " && read phone
+    echo -n "Email: " && read email
+    echo -n "URL: " && read url
+    echo -n "Pen Name (leave empty to use Author's name): " && read pen
+    if [ "$pen" = "" ]; then
+        pen=$author
     fi
+    echo -n "Copyright Holder (leave empty to use Author's name): " && read copyright
+    if [ "$copyright" = "" ]; then
+        copyright=$author
+    fi
+    echo -n "Copyright Year (leave blank for $(date +%Y)): " && read year
+    if [ "$year" = "" ]; then
+        year=`date +%Y`
+    fi
+    echo -n "Publisher (leave blank for none): " && read publisher
+
+    yes_or_no "Everything Correct?" || init
+
+    # write settings needed for later use to file
+    echo -e "title='$title'\nabbr_title=$abbr_title" > ../meta.sh
+
+    echo -e "\n* Creating HTML files."
+    cat html/manuscript_title_template.html | sed -e \
+        "s/TITLE/$title/; s/AUTHOR/$author/; s/ADDR_1/$addr_1/; \
+            s/ADDR_2/$addr_2/; s/PHONE/$phone/; s/EMAIL/$email/; \
+            s/URL/$url/; s/PEN/$pen/; s/YEAR/$year/; \
+            s/COPYRIGHT/$copyright/;" \
+        > ../src/html/manuscript_title.html
+    cat html/paperback_frontmatter.html | sed -e \
+        "s/TITLE/$title/; s/SUB/$subtitle/; s/AUTHOR/$author/; \
+            s/PUBLISHER/$publisher/; s/YEAR/$year/; s/COPYRIGHT/$copyright/;" \
+        > ../src/html/paperback_frontmatter.html
+
+    echo "* Creating CSS files."
+    cat css/manuscript.css | sed -e \
+        "s/LASTNAME/$lastname/; s/TITLE/$abbr_title/;" \
+        > ../src/css/manuscript.css
+    cat css/paperback.css | sed -e \
+        "s/AUTHOR/$author/; s/TITLE/$title/;" \
+        > ../src/css/paperback.css
+    
+    # Copy css files that don't require customization
+    cp css/{manuscript_title,paperback_frontmatter}.css ../src/css
+
+    # Customize epub.yml template
+    echo "* Creating EPUB metadata file..."
+    cat epub-template.yml | sed -e \
+        "s/TITLE/$title/; s/SUB/$subtitle/; s/AUTHOR/$author/; \
+            s/PUBLISHER/$publisher/; s/YEAR/$year/; s/COPYRIGHT/$copyright/;" \
+        > ../epub.yml
+    
+    echo -e "\nDone!"
 }
 
-case "${BUILD_TYPE}" in
-    "")         usage ;;
-    new)        new ;;
-    novel)      novel ;;
-    epub)       epub ;; 
-    manuscript) manuscript ;;
-    all)        novel & epub & manuscript; wait; echo "Finished." ;;
-    wc)         wc -w $SOURCE_DIR/*.md ;;
-    *)          usage ;;
+# MAIN
+case "$1" in
+    init)           init ;;
+    clean)          rm -rf ../build ;;
+    manuscript)     manuscript && echo "Done!" ;;
+    paperback)      paperback && echo "Done!" ;;
+    epub)           epub && echo "Done!" ;;
+    all)            manuscript && paperback && epub && echo "Done!" ;;
+    wc)             wc -w $SOURCES | sed -e "s/\.\.\/src\///" ;;
+    -h|--help)      usage ;;
+    -v|--version)   version ;;
+    "")             usage ;;
+    *)              echo "invalid command" && usage ;;
 esac

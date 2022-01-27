@@ -1,46 +1,37 @@
 # Novel Builder
 
-Build novels using the [CTAN Novel Class](https://ctan.org/pkg/novel) with plain text files.
+Create novels using markdown.
 
-Output to PDF/X, EPUB, or double-spaced manuscript PDF.
+## Prerequisites
 
-## Dependencies
-
-* LuaLaTeX (texlive-luatex)
-* texlive-latex-recommended
-* texlive-latex-extra
-* texlive-fonts-extra
-* texlive-publishers
 * Pandoc
+* Weasyprint
+* Poppler
+* BASH
 
-**Ubuntu:** `sudo apt install pandoc texlive-latex-base texlive-luatex texlive-latex-recommended
-texlive-latex-extra texlive-fonts-extra texlive-publishers`
+## Getting Started
 
-## Usage
+> Note: All `./nb` commands must be called from inside the `novel-builder` directory
 
-1. Start a new repo using this template.
-2. Create a new project with `./nb book_directory new`
-3. Edit `novel.sh`, `manuscript.yml`, and `epub.yml` to suit your project
-4. Start writing your book inside of the new directory with the following rules:
-   * Order the files by prefixing a number, eg. `0_Introduction.md` goes before `1_Chapter_One.md`
-   * Start each file with level one title, e.g. `# Chapter One`
-5. Use the `nb` script:
-   * Parameter 1: directory containing project files (see `./example`)
-   * Parameter 2: command to run
-     * `novel` - a TEX and PDF ready to send to POD service.
-     * `epub` - an EPUB formatted file.
-     * `manuscript` - a double-spaced draft for revision
-     * `all` - run all of the above commands concurrently
-     * `new` - copies the example directory to the directory given in parameter 1
-     * `wc` - count words per file and total wordcount for selected directory
+1. Create a new repository.
+2. Make a new directory `src/` and populate it with chapters. Chapters in the resulting documents will be ordered alphabetically, so make sure you name your files accordingly. E.g. `Chapter_01.md, Chapter_02.md, etc.`
+3. Add this repository as a git submodule: `git submodule add https://github.com/jechasteen/novel-builder`
+4. Call `./nb init` to customize your project. This runs a wizard that automatically fills in the templates with your project's info.
+5. CSS and HTML files will be added to your `src/` directory. Customize these files to suit your needs.
+6. Use the `nb` script to build and maintain your project
+   1. `./nb manuscript` builds a submission-ready manuscript
+   2. `./nb paperback` builds a paperback-formatted pdf (according to `src/css/paperback.css`). See [the @page documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/@page) for more info.
+   3. `./nb clean` removes the `build/` directory.
+   4. `./nb wc` prints word count for each chapter and a grand total.
 
-> For example, `./nb example/ all`
+## Customization
 
-## Limitations
+Calling `./nb init` will customize files like title pages automatically. If you need to make changes, you can either edit the files individually, or go into your `src/` and remove the non-markdown files (`rm -r css/ html/`) and call `./nb init` again.
 
-There is no support for frontmatter like title pages, copyright, etc. (Yet?)
+If you need to make styling changes, make the changes to the files that `nb` created in your `src/` directory.
 
-When preparing a manuscript, you have to manually edit the title and author fields in `manuscript.yml` under the section `header-includes`.
+Customization for distribution formats (paperback/epub) will necessarily require more customization.
 
-Unfortunately, it is necessary to manually edit settings for each output type.
-I am considering creating a script that generates these files.
+## Keeping Up-to-date
+
+To pull the latest git master of this module, call `git submodule update`.

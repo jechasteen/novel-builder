@@ -1,0 +1,17 @@
+---
+# see https://pandoc.org/MANUAL.html#epub-metadata
+title:
+- type: main
+  text: TITLE
+- type: subtitle
+  text: SUB
+creator:
+  - role: author
+    text: AUTHOR
+identifier:
+  - scheme: ISBN-13
+    text: ISBN-13:
+publisher: PUBLISHER
+rights: Copyright © YEAR COPYRIGHT, All Rights Reserved
+lang: en-US
+---
