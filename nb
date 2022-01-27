@@ -179,7 +179,7 @@ init () {
     yes_or_no "Everything Correct?" || init
 
     # write settings needed for later use to file
-    echo -e 'title="$title"\nabbr_title="$abbr_title"' > ../meta.sh
+    echo -e "title=\"$title\"\nabbr_title=\"$abbr_title\"" > ../meta.sh
 
     echo -e "\n* Creating HTML files."
     cat html/manuscript_title_template.html | sed -e \
