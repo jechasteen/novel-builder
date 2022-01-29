@@ -73,7 +73,7 @@ manuscript () {
     pdf_text=$BUILD_DIR/$filename-pdf-text.pdf
     output=$OUTPUT_DIR/$filename-manuscript.pdf
 
-    echo -e "\n\n[MANUSCRIPT]" >> $LOGFILE
+    echo -e "\n[MANUSCRIPT]  (`date`)" >> $LOGFILE
 
     pandoc --standalone \
         --verbose \
@@ -82,7 +82,7 @@ manuscript () {
         -c $text_style \
         -o $html_text $SOURCES >> $LOGFILE 2>&1\
         && \
-        weasyprint $html_text $pdf_text \
+        weasyprint $html_text $pdf_text >> $LOGFILE 2>&1 \
         || \
         error_msg
 
@@ -108,7 +108,7 @@ paperback () {
 
     output=$OUTPUT_DIR/$abbr_title-paperback.pdf
 
-    echo -e "\n\n[PAPERBACK]" >> $LOGFILE
+    echo -e "\n[PAPERBACK] (`date`)" >> $LOGFILE
     # Paperback body
     pandoc --standalone \
         --verbose \
@@ -117,7 +117,7 @@ paperback () {
         -c ../src/css/paperback.css \
         $SOURCES -o $html_text >> $LOGFILE 2>&1 \
         && \
-        weasyprint $html_text $pdf_text \
+        weasyprint $html_text $pdf_text >> $LOGFILE 2>&1 \
         || \
         error_msg
     
