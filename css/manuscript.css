@@ -35,6 +35,18 @@ body {
     line-height: 2;
 }
 
+hr {
+    border: none;
+}
+
+hr::after {
+    font-size: 12pt;
+    color: black;
+    position: relative;
+    left: 49%;
+    content: "#";
+}
+
 p {
     text-indent: 0.5in;
 }
