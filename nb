@@ -80,7 +80,6 @@ manuscript () {
         -f markdown \
         -t html \
         -c $text_style \
-        --metadata title="$title" \
         -o $html_text $SOURCES >> $LOGFILE 2>&1\
         && \
         weasyprint $html_text $pdf_text \
@@ -116,7 +115,6 @@ paperback () {
         -f markdown \
         -t html \
         -c ../src/css/paperback.css \
-        --metadata title="$title" \
         $SOURCES -o $html_text >> $LOGFILE 2>&1 \
         && \
         weasyprint $html_text $pdf_text \
