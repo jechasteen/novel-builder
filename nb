@@ -76,6 +76,7 @@ manuscript () {
     echo -e "\n[MANUSCRIPT]  (`date`)" >> $LOGFILE
 
     pandoc --standalone \
+        --template="../src/html/manuscript_template.html" \
         --verbose \
         -f markdown \
         -t html \
@@ -199,8 +200,9 @@ init () {
         "s/AUTHOR/$author/; s/TITLE/$title/;" \
         > ../src/css/paperback.css
     
-    # Copy css files that don't require customization
+    # Copy html and css files that don't require customization
     cp css/{manuscript_title,paperback_frontmatter}.css ../src/css
+    cp html/manuscript_template.html ../src/html
 
     # Customize epub.yml template
     echo "* Creating EPUB metadata file..."
