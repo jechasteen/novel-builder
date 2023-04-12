@@ -12,6 +12,8 @@ BUILD_DIR=../build
 OUTPUT_DIR=../bin
 LOGFILE=$BUILD_DIR/build.log
 
+WPM=250
+
 if [[ -d $SOURCE_DIR ]]; then
     SOURCES=$SOURCE_DIR/*.md
 else
@@ -214,6 +216,21 @@ init () {
     echo -e "\nDone!"
 }
 
+wordcount () {
+    wc -w $SOURCES | sed -e "s/\.\.\/src\///"
+    count=`wc -w $SOURCES | sed -e "s/\.\.\/src\///" | tail -n 1 | cut -d\t -f1` 
+    time=$(( ($count / $WPM) ))
+    hours=$(( $time / 60 ))
+    minutes=`echo "$time % 60" | bc`
+    if [[ $time -gt 60 ]]; then
+        out="\t `printf "%dh %dm reading time" $hours $minutes`"
+    else
+        out="\t `printf "%dm reading time" $time`"
+    fi
+
+    echo -e $out
+}
+
 # MAIN
 case "$1" in
     init)           init ;;
@@ -222,7 +239,7 @@ case "$1" in
     paperback)      paperback && echo "Done!" ;;
     epub)           epub && echo "Done!" ;;
     all)            manuscript && paperback && epub && echo "Done!" ;;
-    wc)             wc -w $SOURCES | sed -e "s/\.\.\/src\///" ;;
+    wc)             wordcount ;;
     -h|--help)      usage ;;
     -v|--version)   version ;;
     "")             usage ;;
