@@ -22,16 +22,14 @@ Create novels using markdown.
    1. `./nb manuscript` builds a submission-ready manuscript
    2. `./nb paperback` builds a paperback-formatted pdf (according to `src/css/paperback.css`). See [the @page documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/@page) for more info.
    3. `./nb clean` removes the `build/` directory.
-   4. `./nb wc` prints word count for each chapter and a grand total.
+   4. `./nb wc` prints word count for each chapter, a grand total count, and the estimated reading time (based on 250 words/minute).
 
 ## Customization
 
-Calling `./nb init` will customize files like title pages automatically. If you need to make changes, you can either edit the files individually, or go into your `src/` and remove the non-markdown files (`rm -r css/ html/`) and call `./nb init` again.
+Calling `./nb init` runs a wizard which will customize files like title pages automatically. If you need to make changes, you can either edit the files individually, or go into your `src/` and remove the non-markdown files (`rm -r css/ html/`) and call `./nb init` again.
 
 If you need to make styling changes, make the changes to the files that `nb` created in your `src/` directory.
 
-Customization for distribution formats (paperback/epub) will necessarily require more customization.
-
 ## Keeping Up-to-date
 
-To pull the latest git master of this module, call `git submodule update`.
+To pull the latest git master of this module, call `git submodule update --remote --merge`.
