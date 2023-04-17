@@ -1,0 +1,14 @@
+{
+    "fmt": {
+        "files": {
+            "include": ["lib/", "."]
+        },
+        "options": {
+            "indentWidth": 4,
+            "singleQuote": false
+        }
+    },
+    "compilerOptions": {
+        "strict": true
+    }
+}
