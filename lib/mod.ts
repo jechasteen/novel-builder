@@ -1,4 +1,4 @@
-// Re-export library files
+// Re-exports library files
 
 import { init } from "./init.ts";
 import { wordCount } from "./wordCount.ts";
@@ -88,7 +88,7 @@ function timeString(): string {
 
 function sanitize(input: string): string {
     const strip = new RegExp('[~`!@#$%^&*()_=+[{]",}\\|;:"\',<.>/?]');
-    return input.trim().replaceAll(/\s+/, "").replace(strip, "");
+    return input.trim().replaceAll(/\s+/g, "").replace(strip, "");
 }
 
 export {

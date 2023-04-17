@@ -5,24 +5,29 @@ import {
     logBegin,
     pipeProcessOutputToLog,
     print,
-processStatusCallback,
 } from "./mod.ts";
 
-export async function paperback() {
-    print("Compiling Paperback...");
-    logBegin("PAPERBACK");
+let filenames: Record<string, string>;
 
-    const title = getAbbrTitle();
-    const filenames = {
-        final: `${constants.binDir}/${title}-paperback.pdf`,
-        htmlFrontmatter: constants.htmlFrontmatter,
-        htmlText: `${constants.buildDir}/paperback.html`,
-        pdfFrontmatter: `${constants.buildDir}/paperback_frontmatter.pdf`,
-        pdfText: `${constants.buildDir}/paperback_text.pdf`,
-    };
+function generatePromise(success: boolean): Promise<boolean> {
+    return new Promise<boolean>((resolve) => {
+        resolve(success);
+    });
+}
 
-    // Convert the text to html
-    const pandocTextToHTML = Deno.run({
+async function handleProcessCompletion(process: Deno.Process): Promise<boolean> {
+    const [status, stdout, stderr] = await Promise.all([
+        process.status(),
+        process.output(),
+        process.stderrOutput()
+    ]);
+    process.close();
+
+    return generatePromise(status.success);
+}
+
+async function pandocTextToHTML(): Promise<boolean> {
+    const process = Deno.run({
         cmd: [
             "pandoc",
             "--verbose",
@@ -40,26 +45,29 @@ export async function paperback() {
         stderr: "piped",
         stdout: "piped",
     });
-    pipeProcessOutputToLog(pandocTextToHTML);
-    const textPromise = pandocTextToHTML.status()
-        .then((result) => {
-            if (result.success) {
-                const weasyprintTextToPDF = Deno.run({
-                    cmd: [
-                        "weasyprint",
-                        filenames.htmlText,
-                        filenames.pdfText,
-                    ],
-                    stderr: "piped",
-                    stdout: "piped",
-                });
-                // weasyprintTextToPDF.status().then(() => weasyprintTextToPDF.close());
-                pipeProcessOutputToLog(weasyprintTextToPDF);
-            }
-        });
 
-    // Convert the frontmatter to pdf
-    const weasyprintFrontmatter = Deno.run({
+    pipeProcessOutputToLog(process);
+
+    return await handleProcessCompletion(process);
+}
+
+async function weasyprintTextToPDF(): Promise<boolean> {
+    const process = Deno.run({
+        cmd: [
+            "weasyprint",
+            filenames.htmlText,
+            filenames.pdfText,
+        ],
+        stderr: "piped",
+        stdout: "piped",
+    });
+    pipeProcessOutputToLog(process);
+
+    return await handleProcessCompletion(process);
+}
+
+async function weasyprintFrontmatter(): Promise<boolean> {
+    const process = Deno.run({
         cmd: [
             "weasyprint",
             filenames.htmlFrontmatter,
@@ -68,16 +76,13 @@ export async function paperback() {
         stderr: "piped",
         stdout: "piped",
     });
-    pipeProcessOutputToLog(weasyprintFrontmatter);
+    pipeProcessOutputToLog(process);
 
-    await Promise.all([
-        textPromise,
-        weasyprintFrontmatter.status(),
-        // weasyprintFrontmatter.output(),
-    ]);
+    return await handleProcessCompletion(process);
+}
 
-    // Combine the two pdf documents
-    const pdfunite = Deno.run({
+async function combineDocuments(): Promise<boolean> {
+    const process = Deno.run({
         cmd: [
             "pdfunite",
             filenames.pdfFrontmatter,
@@ -87,6 +92,36 @@ export async function paperback() {
         stderr: "piped",
         stdout: "piped",
     });
-    pipeProcessOutputToLog(pdfunite);
-    pdfunite.status().then(processStatusCallback);
+    pipeProcessOutputToLog(process);
+
+    return await handleProcessCompletion(process);
+}
+
+
+
+export async function paperback(): Promise<boolean> {
+    print("Compiling Paperback...");
+    logBegin("PAPERBACK");
+
+    const title = getAbbrTitle();
+    filenames = {
+        final: `${constants.binDir}/${title}-paperback.pdf`,
+        htmlFrontmatter: constants.htmlFrontmatter,
+        htmlText: `${constants.buildDir}/paperback.html`,
+        pdfFrontmatter: `${constants.buildDir}/paperback_frontmatter.pdf`,
+        pdfText: `${constants.buildDir}/paperback_text.pdf`,
+    };
+
+    // Convert the text to html
+    if (!(await pandocTextToHTML())) return generatePromise(false);
+
+    // convert text to pdf
+    if (!(await weasyprintTextToPDF())) return generatePromise(false);
+
+    // convert frontmatter to pdf
+    if (!(await weasyprintFrontmatter())) return generatePromise(false);
+    
+    // combine documents
+    if (!(await combineDocuments())) return generatePromise(false);
+    return generatePromise(true);
 }

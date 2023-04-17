@@ -6,7 +6,6 @@ import {
     logBegin,
     pipeProcessOutputToLog,
     print,
-processStatusCallback,
 } from "./mod.ts";
 
 export function epub(): Promise<Deno.ProcessStatus> {
@@ -33,5 +32,5 @@ export function epub(): Promise<Deno.ProcessStatus> {
     });
 
     pipeProcessOutputToLog(process);
-    process.status().then(processStatusCallback).then(() => process.close());
+    return process.status();
 }

@@ -73,11 +73,17 @@ async function main() {
             init();
             break;
         case "all": // falls through
+        // deno-lint-ignore no-case-declarations
         case "paperback":
-            paperback();
+            const stepResult = await paperback();
+            if (stepResult) {
+                print("Paperback finished successfully!");
+            } else {
+                print(`Paperback compilation failed. See ${constants.logFilePath} for more info.`);
+            }
             if (arg == "paperback") break; // falls through
         case "epub":
-            epub();
+            notifyProcessResult((await epub()).success, "EPUB");
             if (arg === "epub") break;
             if (arg === "all") break; // falls through
         case "wc":
