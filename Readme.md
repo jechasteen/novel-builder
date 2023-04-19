@@ -7,7 +7,7 @@ Create novels using markdown.
 * Pandoc
 * Weasyprint
 * Poppler
-* BASH
+* BASH >= 4.0
 
 ## Getting Started
 
