@@ -1,53 +1,47 @@
 #!/usr/bin/env bash
 set -e
 
-if [ ! `basename $PWD` = "novel-builder" ]; then
-    echo "Please run the script from inside the novel-builder directory."
+if ((BASH_VERSINFO < 4)); then
+    echo "This script requires BASH version 4 or higher."
     exit 1
 fi
 
-SOURCE_DIR=../src
-SOURCES=../src/*.md
-BUILD_DIR=../build
-OUTPUT_DIR=../bin
-LOGFILE=$BUILD_DIR/build.log
-
+VERSION=2.1.0
 WPM=250
 
-if [[ -d $SOURCE_DIR ]]; then
-    SOURCES=$SOURCE_DIR/*.md
-else
-    echo "Source directory '$SOURCE_DIR' does not exist!"
-    exit 1
-fi
+SOURCES=(../src/*.md)
+SRC_HTML=../src/html
+SRC_CSS=../src/css
+BUILD=../build
+BIN=../bin
+LOGFILE=${BUILD}/build.log
 
-version () {
-    echo "Novel Builder v2.0.0"
+error_msg () {
+    echo "ERROR: Check ${BUILD}/build.log"
 }
 
-usage () {
-    echo "Usage: $0 [OPTION || COMMAND]"
-    echo -e "\nOptions:"
-    echo -e "\t-h, --help\tPrint this help message"
-    echo -e "\t-v. --version\tPrint version and exit"
-    echo -e "\nCOMMAND must be one of:"
-    echo -e "\tclean\t\tRemove build directory."
-    echo -e "\twc\t\tPrint word count for each chapter and a grand total."
-    echo -e "\tmanuscript"
-    echo -e "\tpaperback"
-    exit 1
+prompt () {
+    read -r -p "$1" "$2"
 }
 
-create_dir_if_not_exist () {
-    if [[ ! -d $1 ]]; then
-        mkdir -p $1
-    fi
+mkdir_if_not_exist () {
+    [[ -d $1 ]] || mkdir $1
+}
+
+ensure_src_dirs () {
+    mkdir_if_not_exist $SRC_HTML
+    mkdir_if_not_exist $SRC_CSS
+}
+
+ensure_compile_dirs() {
+    mkdir_if_not_exist $BUILD
+    mkdir_if_not_exist $BIN
 }
 
 # https://stackoverflow.com/questions/29436275/how-to-prompt-for-yes-or-no-in-bash
 function yes_or_no {
     while true; do
-        read -p "$* [y/n]: " yn
+        read -rp "$* [y/n]: " yn
         case $yn in
             [Yy]*) return 0  ;;  
             [Nn]*) echo "Aborted" ; return  1 ;;
@@ -55,193 +49,243 @@ function yes_or_no {
     done
 }
 
-error_msg () {
-    echo "[Error] Check $BUILD_DIR/build.log"
+usage () {
+    cat << EOF
+Usage: $0 [OPTION | COMMAND]
+
+OPTIONs:
+    -h, --help      Print this help message
+    -v, --version   Print version and exit
+
+COMMANDs:
+    clean           Remove build directory
+    wc              Print word count for each chapter, a grand total, and estimated reading time
+    manuscript      \\
+    paperback       - Compile individual formats
+    epub            /
+    all             Compile all formats
+EOF
 }
 
-manuscript () {
-    source ../meta.sh
-    echo -n "Preparing manuscript PDF... "
-    create_dir_if_not_exist $BUILD_DIR
-    create_dir_if_not_exist $OUTPUT_DIR
+echo Novel Builder v${VERSION}
+case "$1" in
+    -v|--version )
+        exit 0
+        ;;
+    -h|--help )
+        usage
+        exit 0
+        ;;
+    clean )
+        if rm -rf "$BUILD"; then
+            echo "Clean finished successfully"
+        fi
+        ;;
+    wc )
+        wc -w "${SOURCES[@]}" | sed -e "s/\.\.\/src\///"
+        count=$(wc -w "${SOURCES[@]}" | sed -e "s/\.\.\/src\///" | tail -n 1 | cut -d\t -f1)
+        time=$(( count / WPM ))
+        hours=$(( time / 60 ))
+        minutes=$(echo "$time % 60" | bc)
+        if [[ $time -gt 60 ]]; then
+            out="\t $(printf "%dh %dm reading time" "$hours" "$minutes")"
+        else
+            out="\t $(printf "%dm reading time" $time)"
+        fi
 
-    cp $SOURCE_DIR/css/manuscript.css $BUILD_DIR
+        echo -e "$out"
+        ;;
+    init )
+        echo "Initializing new Project."
+        ensure_src_dirs
+        run=0
+        while [[ $run ]]; do
+            echo -e "\nNovel Builder\nInitializing new project."
+            prompt "Title: " title
+            prompt "Abbreviated Title (For manuscript page headers and file names): " abbr_title
+            prompt "Subtitle (leave blank for none): " subtitle
+            prompt "Author's Name: " author
+            surname=$(echo "$author" | awk -F " " '{print $NF}')
+            prompt "Pen Name (leave empty to use Author's name): " pen
+            if test -z "$pen"; then
+                pen="$author"
+            fi
+            prompt "Copyright Holder (leave empty to use Author's name): " copyright
+            if test -z "$copyright"; then
+                copyright="$author"
+            fi
+            prompt "Copyright Year (leave blank for $(date +%Y)): " year
+            if test -z "$year"; then
+                year=$(date +%Y)
+            fi
+            prompt "Publisher (leave blank for none): " publisher
+            prompt "Address (Line 1): " addr_1
+            prompt "Address (Line 2): "  addr_2
+            prompt "Phone: " phone
+            prompt "Email: " email
+            prompt "URL: " url
+            run=$(yes_or_no "Everything correct?")
+        done
 
-    filename="$abbr_title"
-    text_style=$SOURCE_DIR/css/manuscript.css
-    html_title=$SOURCE_DIR/html/manuscript_title.html
-    html_text=$BUILD_DIR/$filename-html-text.html
-    pdf_title=$BUILD_DIR/$filename-pdf-title.pdf
-    pdf_text=$BUILD_DIR/$filename-pdf-text.pdf
-    output=$OUTPUT_DIR/$filename-manuscript.pdf
+        echo -e "title=\"$title\"\nabbr_title=\"$abbr_title\"" > ../meta.sh
 
-    echo -e "\n[MANUSCRIPT]  (`date`)" >> $LOGFILE
-
-    pandoc --standalone \
-        --template="../src/html/manuscript_template.html" \
-        --verbose \
-        -f markdown \
-        -t html \
-        -c $text_style \
-        -o $html_text $SOURCES >> $LOGFILE 2>&1\
-        && \
-        weasyprint $html_text $pdf_text >> $LOGFILE 2>&1 \
-        || \
-        error_msg
-
-    # Apply wordcount to title page
-    intermediate=`cat $SOURCES | wc -w | awk '{print $1" / 1000"}' | bc -l`
-    wordcount=`printf "%.0f" "$intermediate" | awk '{print $1" * 1000"}' | bc -l`
-    wordcount_comma=`printf "%'d" $wordcount`
-    sed -e "s/WORDCOUNT/$wordcount_comma Words/" $html_title > $BUILD_DIR/manuscript_title.html
-    weasyprint $BUILD_DIR/manuscript_title.html $pdf_title
-
-    pdfunite $pdf_title $pdf_text $output >> $LOGFILE 2>&1 && echo "Done!"
-}
-
-paperback () {
-    source ../meta.sh
-    echo -n "Preparing paperback PDF... "
-    create_dir_if_not_exist $BUILD_DIR
-
-    html_frontmatter=../src/html/paperback_frontmatter.html
-    html_text=$BUILD_DIR/paperback.html
-    pdf_frontmatter=$BUILD_DIR/paperback_frontmatter.pdf
-    pdf_text=$BUILD_DIR/paperback_text.pdf
-
-    output=$OUTPUT_DIR/$abbr_title-paperback.pdf
-
-    echo -e "\n[PAPERBACK] (`date`)" >> $LOGFILE
-    # Paperback body
-    pandoc --standalone \
-        --verbose \
-        -f markdown \
-        -t html \
-        -c ../src/css/paperback.css \
-        $SOURCES -o $html_text >> $LOGFILE 2>&1 \
-        && \
-        weasyprint $html_text $pdf_text >> $LOGFILE 2>&1 \
-        || \
-        error_msg
-    
-    # Paperback front matter
-    weasyprint $html_frontmatter $pdf_frontmatter
-    
-    pdfunite $pdf_frontmatter $pdf_text $output
-    
-    echo "Done!"
-}
-
-epub () {
-    source ../meta.sh
-    echo -n "Preparing EPUB... "
-    create_dir_if_not_exist $BUILD_DIR
-    create_dir_if_not_exist $OUTPUT_DIR
-
-    output=$OUTPUT_DIR/$abbr_title.epub
-
-    echo -e "\n\n[EPUB]" >> $LOGFILE
-    pandoc --verbose \
-        --metadata-file=../epub.yml \
-        -o $output $SOURCES >> $LOGFILE 2>&1 \
-        && echo "Done!" \
-        || error_msg
-}
-
-init () {
-    create_dir_if_not_exist ../src/html
-    create_dir_if_not_exist ../src/css
-
-    echo -e "\nNovel Builder\nInitializing new project."
-    echo -en "\nTitle: " && read title
-    echo -en "Abbreviated Title (For manuscript page headers and file names): " && read abbr_title
-    echo -en "Subtitle (leave blank for none): " && read subtitle
-    echo -en "Author's Name: " && read author
-    lastname=`echo $author | awk -F " " '{print $NF}'`
-    echo -n "Address (Line 1): " && read addr_1
-    echo -n "Address (Line 2): " && read addr_2
-    echo -n "Phone: " && read phone
-    echo -n "Email: " && read email
-    echo -n "URL: " && read url
-    echo -n "Pen Name (leave empty to use Author's name): " && read pen
-    if [ "$pen" = "" ]; then
-        pen=$author
-    fi
-    echo -n "Copyright Holder (leave empty to use Author's name): " && read copyright
-    if [ "$copyright" = "" ]; then
-        copyright=$author
-    fi
-    echo -n "Copyright Year (leave blank for $(date +%Y)): " && read year
-    if [ "$year" = "" ]; then
-        year=`date +%Y`
-    fi
-    echo -n "Publisher (leave blank for none): " && read publisher
-
-    yes_or_no "Everything Correct?" || init
-
-    # write settings needed for later use to file
-    echo -e "title=\"$title\"\nabbr_title=\"$abbr_title\"" > ../meta.sh
-
-    echo -e "\n* Creating HTML files."
-    cat html/manuscript_title_template.html | sed -e \
-        "s/TITLE/$title/; s/AUTHOR/$author/; s/ADDR_1/$addr_1/; \
+        echo -e "\n* Creating HTML files..."
+        sed -e \
+            "s/TITLE/$title/; s/AUTHOR/$author/; s/ADDR_1/$addr_1/; \
             s/ADDR_2/$addr_2/; s/PHONE/$phone/; s/EMAIL/$email/; \
             s/URL/$url/; s/PEN/$pen/; s/YEAR/$year/; \
             s/COPYRIGHT/$copyright/;" \
-        > ../src/html/manuscript_title.html
-    cat html/paperback_frontmatter.html | sed -e \
-        "s/TITLE/$title/; s/SUB/$subtitle/; s/AUTHOR/$author/; \
+            # Input
+            html/manuscript_title_template.html \
+            > ${SRC_HTML}/manuscript_title.html
+        sed -e \
+            "s/TITLE/$title/; s/SUB/$subtitle/; s/AUTHOR/$author/; \
             s/PUBLISHER/$publisher/; s/YEAR/$year/; s/COPYRIGHT/$copyright/;" \
-        > ../src/html/paperback_frontmatter.html
+            # Input
+            html/paperback_frontmatter.html \
+            > ${SRC_HTML}/paperback_frontmatter.html
+        
+        echo "* Creating CSS files..."
+        sed -e \
+            "s/SURNAME/$surname/; s/TITLE/$abbr_title/;" \
+            # Input
+            css/manuscript.css \
+            > ${SRC_CSS}/manuscript.css
+        sed -e \
+            "s/AUTHOR/$author/; s/TITLE/$title/;" \
+            # Input
+            css/paperback.css \
+            > ${SRC_CSS}/paperback.css
+        
+        echo "* Copying additional HTML and CSS..."
+        cp css/{manuscript_title,paperback_frontmatter}.css "$SRC_CSS"
+        cp html/manuscript_template.html "$SRC_HTML"
 
-    echo "* Creating CSS files."
-    cat css/manuscript.css | sed -e \
-        "s/LASTNAME/$lastname/; s/TITLE/$abbr_title/;" \
-        > ../src/css/manuscript.css
-    cat css/paperback.css | sed -e \
-        "s/AUTHOR/$author/; s/TITLE/$title/;" \
-        > ../src/css/paperback.css
-    
-    # Copy html and css files that don't require customization
-    cp css/{manuscript_title,paperback_frontmatter}.css ../src/css
-    cp html/manuscript_template.html ../src/html
-
-    # Customize epub.yml template
-    echo "* Creating EPUB metadata file..."
-    cat epub-template.yml | sed -e \
-        "s/TITLE/$title/; s/SUB/$subtitle/; s/AUTHOR/$author/; \
+        echo "* Creating EPUB metadata file..."
+        sed -e \
+            "s/TITLE/$title/; s/SUB/$subtitle/; s/AUTHOR/$author/; \
             s/PUBLISHER/$publisher/; s/YEAR/$year/; s/COPYRIGHT/$copyright/;" \
-        > ../epub.yml
-    
-    echo -e "\nDone!"
-}
+            # Input
+            epub-template.yml \
+            > ../epub.yml
 
-wordcount () {
-    wc -w $SOURCES | sed -e "s/\.\.\/src\///"
-    count=`wc -w $SOURCES | sed -e "s/\.\.\/src\///" | tail -n 1 | cut -d\t -f1` 
-    time=$(( ($count / $WPM) ))
-    hours=$(( $time / 60 ))
-    minutes=`echo "$time % 60" | bc`
-    if [[ $time -gt 60 ]]; then
-        out="\t `printf "%dh %dm reading time" $hours $minutes`"
-    else
-        out="\t `printf "%dm reading time" $time`"
-    fi
+        echo -e "\nDone!"
+        ;;
+    manuscript | all)
+        echo -n "Preparing manuscript PDF... "
+        ensure_compile_dirs
+        . ../meta.sh
 
-    echo -e $out
-}
+        filename=$abbr_title
+        html_manuscript_text=${BUILD}/${filename}_manuscript_text.html
+        pdf_manuscript_text=${BUILD}/${filename}_manuscript_text.pdf
+        html_manuscript_title=${BUILD}/${title}_manuscript_title.html
+        pdf_manuscript_title=${BUILD}/${filename}_manuscript_title.pdf
 
-# MAIN
-case "$1" in
-    init)           init ;;
-    clean)          rm -rf ../build ;;
-    manuscript)     manuscript && echo "Done!" ;;
-    paperback)      paperback && echo "Done!" ;;
-    epub)           epub && echo "Done!" ;;
-    all)            manuscript && paperback && epub && echo "Done!" ;;
-    wc)             wordcount ;;
-    -h|--help)      usage ;;
-    -v|--version)   version ;;
-    "")             usage ;;
-    *)              echo "invalid command" && usage ;;
+        echo -e "\n[MANUSCRIPT] $(date)" >> $LOGFILE
+        cp ${SRC_CSS}/manuscript.css "$BUILD"
+
+        echo "<PANDOC> ${html_manuscript_text}" >> $LOGFILE
+        if pandoc --standalone \
+            --template=${SRC_HTML}/manuscript_template.html \
+            --verbose \
+            -f markdown \
+            -t html \
+            -c ${SRC_CSS}/manuscript.css \
+            -o $html_manuscript_text \
+            "${SOURCES[@]}" \
+                >> $LOGFILE 2<&1
+        then
+            echo "<WEASYPRINT> ${html_manuscript_text}" >> $LOGFILE
+            weasyprint $html_manuscript_text $pdf_manuscript_text \
+                >> $LOGFILE 2>&1
+        else
+            error_msg
+            exit 1
+        fi
+
+        # Apply wordcount to title page
+        # We have to do `cat $SOURCES ...` here to get the total and not the whole report
+        intermediate=$(cat "${SOURCES[@]}" | wc -w | awk '{print $1" / 1000"}' | bc -l)
+        wordcount=$(printf "%.0f" "$intermediate" | awk '{print $1" * 1000"}' | bc -l)
+        wordcount_comma=$(printf "%'d" "$wordcount")
+        sed -e "s/WORDCOUNT/${wordcount_comma} Words/" ${SRC_HTML}/manuscript_title.html \
+            > $html_manuscript_title
+        
+        echo "<WEASYPRINT> ${html_manuscript_title}" >> $LOGFILE
+        if weasyprint $html_manuscript_title $pdf_manuscript_title \
+            >> $LOGFILE 2>&1
+        then
+            echo "<PDFUNITE>" >> $LOGFILE
+            if pdfunite $pdf_manuscript_title \
+                $pdf_manuscript_text \
+                ${BIN}/${filename}_manuscript.pdf \
+                >> $LOGFILE 2>&1
+            then
+                echo "Done!"
+            else
+                error_msg
+                exit 1
+            fi
+        else
+            error_msg
+            exit 1
+        fi
+        ;;& # Falls through
+    paperback | all)
+        echo -n "Preparing paperback PDF... "
+        ensure_compile_dirs
+        . ../meta.sh
+
+        html_paperback_text=${BUILD}/paperback_text.html
+        pdf_paperback_frontmatter=${BUILD}/paperback_frontmatter.pdf
+
+        echo -e "\n[PAPERBACK] ($(date))" >> $LOGFILE
+        if pandoc --standalone \
+            --verbose \
+            -f markdown \
+            -t html \
+            -c ${SRC_CSS}/paperback.css \
+            -o $html_paperback_text \
+            "${SOURCES[@]}" \
+                >> $LOGFILE 2>&1
+        then
+            weasyprint $html_paperback_text \
+                ${BUILD}/paperback_text.pdf \
+                    >> $LOGFILE 2>&1
+        else
+            error_msg
+            exit 1
+        fi
+
+        weasyprint ${SRC_HTML}/paperback_frontmatter.html \
+            $pdf_paperback_frontmatter
+        
+        pdfunite $pdf_paperback_frontmatter \
+            ${BUILD}/paperback_text.pdf \
+            ${BIN}/${title}_paperback.pdf
+        
+        echo "Done!"
+
+        ;;& # Falls through
+    epub | all)
+        echo -n "Preparing EPUB... "
+        ensure_compile_dirs
+        . ../meta.sh
+
+        echo -e "\n[EPUB]" >> $LOGFILE
+        if pandoc --verbose \
+            --metadata-file=../epub.yml \
+            -o ${title}.epub \
+            "${SOURCES[@]}" \
+                >> $LOGFILE 2>&1
+        then
+            echo "Done!"
+        else
+            error_msg
+        fi
+        ;;
+    * )
+        echo "Invalid option or command." && usage
+        ;;
 esac
