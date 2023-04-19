@@ -7,7 +7,7 @@
     margin-top: 1.5in;
     @top-right {
         margin-top: 1in;
-        content: "LASTNAME / TITLE / " counter(page);
+        content: "SURNAME / TITLE / " counter(page);
     }
 }
 
