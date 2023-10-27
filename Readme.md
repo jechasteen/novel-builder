@@ -16,9 +16,10 @@ Create novels using markdown.
 1. Create a new repository.
 2. Make a new directory `src/` and populate it with chapters. Chapters in the resulting documents will be ordered alphabetically, so make sure you name your files accordingly. E.g. `Chapter_01.md, Chapter_02.md, etc.`
 3. Add this repository as a git submodule: `git submodule add https://github.com/jechasteen/novel-builder`
-4. Call `./nb init` to customize your project. This runs a wizard that automatically fills in the templates with your project's info.
-5. CSS and HTML files will be added to your `src/` directory. Customize these files to suit your needs.
-6. Use the `nb` script to build and maintain your project
+4. Descend into `novel-builder` directory
+5. Call `./nb init` to customize your project. This runs a wizard that automatically fills in the templates with your project's info.
+6. CSS and HTML files will be added to your `src/` directory. Customize these files to suit your needs.
+7. Use the `nb` script to build and maintain your project
    1. `./nb manuscript` builds a submission-ready manuscript
    2. `./nb paperback` builds a paperback-formatted pdf (according to `src/css/paperback.css`). See [the @page documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/@page) for more info.
    3. `./nb clean` removes the `build/` directory.
